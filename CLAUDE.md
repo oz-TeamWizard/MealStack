@@ -4,139 +4,97 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MealStack is a meal planning and recipe management application. This repository is currently in initial setup phase.
+MealStack is a Korean bulk-up meal delivery service focusing on subscription-based orders. Built with Next.js 14 + JavaScript (no TypeScript) + Zustand + Tailwind CSS, targeting fitness enthusiasts aged 20-30.
 
-## Development Environment Setup
+## Development Commands
 
-### Prerequisites
-- Node.js (version to be determined based on package.json)
-- npm or yarn package manager
-- Git for version control
-
-### Initial Setup
 ```bash
-# Clone the repository
-git clone https://github.com/oz-TeamWizard/MealStack.git
-cd MealStack
+# Development server
+npm run dev                # Runs on http://localhost:3000
 
-# Install dependencies (once package.json is created)
-npm install
-
-# Start development server (command to be determined)
-npm run dev
-```
-
-## Common Development Commands
-
-*Note: Commands will be updated once package.json and build tools are configured*
-
-### Development
-```bash
-# Start development server
-npm run dev
-
-# Build for production
+# Production build
 npm run build
+npm start
 
-# Run tests
-npm test
-
-# Run linter
+# Code quality
 npm run lint
-
-# Fix linting issues
-npm run lint:fix
 ```
 
-### Testing
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run specific test file
-npm test <filename>
-
-# Generate test coverage
-npm run test:coverage
-```
+Note: No test framework is configured yet. When adding tests, update this section with test commands.
 
 ## Architecture Overview
 
-*This section will be expanded as the application architecture is developed*
+### State Management Architecture
+Uses Zustand with three main stores:
+- **authStore**: SMS authentication, 24hr auto-login, phone verification timer
+- **cartStore**: Shopping cart items, subscription plan selection, quantity management
+- **userStore**: User profile, order history, subscription management, address/payment methods
 
-### Planned Architecture
-- Frontend: Modern JavaScript/TypeScript framework (React, Vue, or similar)
-- Backend: Node.js with Express or similar framework
-- Database: To be determined (likely PostgreSQL or MongoDB)
-- Authentication: JWT-based authentication system
-- API: RESTful API design
+### Authentication Flow
+1. Phone number input with auto-formatting (010-XXXX-XXXX)
+2. SMS verification with 3-minute countdown timer
+3. Automatic localStorage persistence for 24-hour sessions
+4. All protected routes redirect to `/login` when unauthenticated
 
-### Directory Structure (Planned)
+### Route Structure (App Router)
 ```
-MealStack/
-├── frontend/          # Frontend application
-├── backend/           # Backend API server
-├── shared/           # Shared utilities and types
-├── database/         # Database migrations and seeds
-├── docs/             # Project documentation
-└── scripts/          # Build and deployment scripts
-```
-
-## Key Features (Planned)
-- User authentication and profiles
-- Recipe creation and management
-- Meal planning and scheduling
-- Shopping list generation
-- Nutritional information tracking
-- Recipe sharing and discovery
-
-## Development Guidelines
-
-### Code Style
-- Use TypeScript for type safety
-- Follow consistent naming conventions
-- Implement proper error handling
-- Write unit tests for business logic
-- Document complex functions and classes
-
-### Git Workflow
-- Use meaningful commit messages
-- Create feature branches for new development
-- Use pull requests for code review
-- Keep commits focused and atomic
-
-### Database
-- Use migrations for schema changes
-- Seed data for development environment
-- Follow database naming conventions
-- Index frequently queried fields
-
-### API Design
-- Follow RESTful principles
-- Use consistent response formats
-- Implement proper HTTP status codes
-- Version API endpoints when necessary
-- Document endpoints with OpenAPI/Swagger
-
-## Environment Variables
-
-*To be documented as the application is developed*
-
-```bash
-# Example environment variables
-NODE_ENV=development
-PORT=3000
-DATABASE_URL=postgresql://localhost/mealstack_dev
-JWT_SECRET=your-secret-key
+/                    → Auto-redirect based on auth status
+/home               → Product showcase, subscription plans, pre-orders
+/login              → SMS phone verification
+/products           → Single product with quantity selection
+/subscription       → Weekly/monthly subscription plans
+/checkout           → Payment form (TossPayments integration planned)
+/mypage             → Order history, subscription management
 ```
 
-## Deployment
+### Component Architecture
+- **Common Components**: Button (primary/secondary/outline), Input (dark theme), Card (product/subscription variants)
+- **Layout Components**: Header (with back button), BottomNav (SVG icons with active states)
+- **Icons**: Custom SVG navigation icons matching Figma design (home, shop, star, user)
 
-*Deployment instructions will be added as deployment strategy is determined*
+### Design System
+- **Brand Colors**: Primary Red (#dc2626), Black Background (#111111)
+- **Theme**: Dark UI with red accents, mobile-first responsive
+- **Typography**: Inter font family
+- **Color Constants**: Defined in `src/constants/colors.js` with Tailwind mappings
 
-## Contributing
+### Business Logic
+- **Products**: Individual meals (₩12,000), 3-day sets (₩33,000), 7-day sets (₩75,000)
+- **Subscriptions**: Weekly (₩65,000) and Premium Monthly (₩289,000) with nutrition management
+- **User Flow**: Browse → Login → Cart → Checkout → Order Management
 
-*Contribution guidelines will be established as the team grows*
+## Key Implementation Notes
+
+### Authentication Guards
+All order/subscription actions check `isAuthenticated` state and redirect to `/login`. No server-side session management implemented yet.
+
+### Mock Data Strategy
+Currently uses mock data in stores for development. API integration points are marked with `TODO:` comments throughout the codebase.
+
+### Mobile Optimization
+- Bottom navigation with active state indicators
+- Touch-friendly 44px+ tap targets
+- Responsive grid layouts for product display
+
+### Future Backend Integration Points
+- SMS API integration in `authStore.sendVerificationCode()`
+- TossPayments integration in checkout flow
+- User data persistence replacing localStorage approach
+- Image upload for product photos in `public/images/`
+
+## Development Team Structure
+
+3-developer split by feature ownership:
+- **Developer A**: Home page, SMS authentication, pre-order system
+- **Developer B**: Product pages, shopping cart, payment integration  
+- **Developer C**: Subscription management, user profile, order history
+
+When working on cross-team features, coordinate through shared stores and component interfaces.
+
+## Path Aliases
+
+Uses `@/` alias for `src/` directory. Configured in `jsconfig.json` for IDE support.
+
+## Important Context
+
+This is a Korean service with Korean UI text and KRW pricing. The target user journey prioritizes subscription conversion over one-time purchases. Authentication is phone-based (common in Korean apps) rather than email-based.
