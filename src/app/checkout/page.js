@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import Card from '@/components/common/Card';
@@ -10,7 +10,7 @@ import { useCartStore } from '@/stores/cartStore';
 import { useAuthStore } from '@/stores/authStore';
 
 // 결제페이지 - 개발자 B 담당
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { items, selectedSubscription, totalAmount, clearCart } = useCartStore();
@@ -256,5 +256,17 @@ export default function CheckoutPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background-black flex items-center justify-center">
+        <div className="w-12 h-12 loading-spinner"></div>
+      </div>
+    }>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }

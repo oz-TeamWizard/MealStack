@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
@@ -10,7 +10,7 @@ import { useCartStore } from '@/stores/cartStore';
 import { useAuthStore } from '@/stores/authStore';
 
 // 구독 페이지 - 개발자 C 담당
-export default function SubscriptionPage() {
+function SubscriptionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectSubscription, selectedSubscription } = useCartStore();
@@ -204,5 +204,17 @@ export default function SubscriptionPage() {
       
       <BottomNav />
     </div>
+  );
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background-black flex items-center justify-center">
+        <div className="w-12 h-12 loading-spinner"></div>
+      </div>
+    }>
+      <SubscriptionPageContent />
+    </Suspense>
   );
 }
