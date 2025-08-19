@@ -20,7 +20,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ko">
       <body className={`${inter.className} bg-background-black text-text-white`}>
-        <div className="min-h-screen">
+        <div className="min-h-screen max-w-md mx-auto">
           {children}
         </div>
       </body>

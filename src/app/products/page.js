@@ -146,7 +146,7 @@ export default function ProductsPage() {
         </div>
         
         {/* 장바구니 & 주문하기 버튼 */}
-        <div className="fixed bottom-20 left-0 right-0 p-4 bg-background-black border-t border-border-gray">
+        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-md p-4 bg-background-black border-t border-border-gray">
           <div className="flex space-x-3">
             <Button
               onClick={handleAddToCart}

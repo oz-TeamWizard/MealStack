@@ -32,7 +32,7 @@ export default function BottomNav() {
   ];
   
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card-dark-gray border-t border-border-gray">
+    <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-card-dark-gray border-t border-border-gray">
       <div className="flex items-center justify-around py-2">
         {navItems.map((item) => {
           const isActive = pathname === item.path;

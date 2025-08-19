@@ -10,7 +10,7 @@ export default function Header({ title, showBack = false, showMenu = true }) {
   const { isAuthenticated, user, logout } = useAuthStore();
   
   return (
-    <header className="bg-card-dark-gray px-4 py-3 flex items-center justify-between">
+    <header className="bg-background-black px-4 py-3 flex items-center justify-between">
       {/* 좌측: 뒤로가기 또는 로고 */}
       <div className="flex items-center">
         {showBack ? (

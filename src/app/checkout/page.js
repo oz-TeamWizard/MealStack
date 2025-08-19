@@ -244,7 +244,7 @@ function CheckoutPageContent() {
       </main>
       
       {/* 결제 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background-black border-t border-border-gray">
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md p-4 bg-background-black border-t border-border-gray">
         <Button
           onClick={handlePayment}
           loading={isProcessing}

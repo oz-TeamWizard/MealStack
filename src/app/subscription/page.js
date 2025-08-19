@@ -170,7 +170,7 @@ function SubscriptionPageContent() {
         
         {/* 구독 신청 버튼 */}
         {selectedPlan && (
-          <div className="fixed bottom-20 left-0 right-0 p-4 bg-background-black border-t border-border-gray">
+          <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-md p-4 bg-background-black border-t border-border-gray">
             <div className="mb-2 text-center">
               <p className="text-sm text-text-gray">
                 {selectedPlan.name} 선택
