@@ -69,7 +69,10 @@ export default function LoginPage() {
       return;
     }
     
-    await sendVerificationCode();
+    const result = await sendVerificationCode();
+    if (!result.success) {
+      setErrors({ ...errors, phoneNumber: result.error });
+    }
   };
   
   // 인증번호 입력
@@ -86,11 +89,11 @@ export default function LoginPage() {
       return;
     }
     
-    const success = await verifyAndLogin();
-    if (success) {
+    const result = await verifyAndLogin();
+    if (result.success) {
       router.push('/home');
     } else {
-      setErrors({ ...errors, verificationCode: '인증번호가 올바르지 않습니다' });
+      setErrors({ ...errors, verificationCode: result.error });
     }
   };
   

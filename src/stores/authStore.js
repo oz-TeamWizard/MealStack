@@ -20,15 +20,33 @@ export const useAuthStore = create((set, get) => ({
   sendVerificationCode: async () => {
     set({ isLoading: true });
     try {
-      // TODO: API 호출로 SMS 전송
-      console.log('SMS 인증번호 전송:', get().phoneNumber);
+      const { phoneNumber } = get();
       
-      // Mock: 3분 타이머 시작
+      const response = await fetch('/api/auth/send-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'SMS 전송에 실패했습니다.');
+      }
+      
+      // 3분 타이머 시작
       set({ 
         isVerificationSent: true, 
         verificationTimer: 180,
         isLoading: false 
       });
+      
+      // 개발 환경에서만 인증번호 콘솔 출력
+      if (data.verificationCode) {
+        console.log('개발용 인증번호:', data.verificationCode);
+      }
       
       // 타이머 카운트다운
       const timer = setInterval(() => {
@@ -41,9 +59,11 @@ export const useAuthStore = create((set, get) => ({
         }
       }, 1000);
       
+      return { success: true, message: data.message };
     } catch (error) {
       console.error('SMS 전송 실패:', error);
       set({ isLoading: false });
+      return { success: false, error: error.message };
     }
   },
   
@@ -53,21 +73,30 @@ export const useAuthStore = create((set, get) => ({
     try {
       const { phoneNumber, verificationCode } = get();
       
-      // TODO: API 호출로 인증번호 검증
-      console.log('인증 시도:', { phoneNumber, verificationCode });
+      const response = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber, verificationCode }),
+      });
       
-      // Mock: 성공적인 로그인
-      const mockUser = {
-        id: 1,
-        name: '김벌크업',
-        phoneNumber,
-        email: 'user@example.com',
-        subscriptionStatus: 'weekly' // weekly, monthly, none
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '인증에 실패했습니다.');
+      }
+      
+      const user = {
+        id: data.user.id,
+        phoneNumber: data.user.phoneNumber,
+        createdAt: data.user.createdAt,
+        lastLoginAt: data.user.lastLoginAt
       };
       
       set({
         isAuthenticated: true,
-        user: mockUser,
+        user,
         isLoading: false,
         phoneNumber: '',
         verificationCode: '',
@@ -77,15 +106,15 @@ export const useAuthStore = create((set, get) => ({
       
       // 로컬 스토리지에 로그인 상태 저장 (24시간 유지)
       localStorage.setItem('mealstack_auth', JSON.stringify({
-        user: mockUser,
+        user,
         timestamp: Date.now()
       }));
       
-      return true;
+      return { success: true, message: data.message };
     } catch (error) {
       console.error('인증 실패:', error);
       set({ isLoading: false });
-      return false;
+      return { success: false, error: error.message };
     }
   },
   
