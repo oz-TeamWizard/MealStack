@@ -20,6 +20,7 @@ export const useAuthStore = create((set, get) => ({
       
       const user = {
         id: result.user.id,
+        name: result.user.nickname, // 카카오 닉네임을 이름으로 사용
         nickname: result.user.nickname,
         profileImage: result.user.profileImage,
         email: result.user.email,
@@ -95,6 +96,7 @@ export const useAuthStore = create((set, get) => ({
       
       const user = {
         id: userInfo.id,
+        name: userInfo.properties?.nickname || '카카오 사용자', // 카카오 닉네임을 이름으로 사용
         nickname: userInfo.properties?.nickname || '',
         profileImage: userInfo.properties?.profile_image || '',
         email: userInfo.kakao_account?.email || '',
