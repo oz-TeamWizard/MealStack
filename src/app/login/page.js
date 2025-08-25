@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
+import BottomNav from '@/components/layout/BottomNav';
 import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
 import { useAuthStore } from '@/stores/authStore';
@@ -206,6 +207,8 @@ export default function LoginPage() {
           </div>
         </div>
       </main>
+      
+      <BottomNav />
     </div>
   );
 }
