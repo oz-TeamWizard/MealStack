@@ -109,7 +109,7 @@ export default function HomePage() {
                     <span className="text-xs text-text-gray">이미지</span>
                   </div>
                   <p className="text-xs text-text-white mb-1 min-h-[32px]">
-                    {product.name.split(" ").slice(0, 2).join(" ")}
+                    {product.name}
                   </p>
                   <div className="text-xs mt-auto">
                     {product.originalPrice ? (
