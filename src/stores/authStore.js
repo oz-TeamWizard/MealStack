@@ -1,107 +1,39 @@
 import { create } from 'zustand';
+import { initKakao, performKakaoLogin, kakaoLogout } from '@/lib/kakao';
 
-// 인증 관련 상태 관리
+// 인증 관련 상태 관리 - 카카오 로그인 방식
 export const useAuthStore = create((set, get) => ({
   // 상태
   isAuthenticated: false,
   user: null,
   isLoading: false,
-  phoneNumber: '',
-  verificationCode: '',
-  isVerificationSent: false,
-  verificationTimer: 0,
   
-  // 액션
-  setPhoneNumber: (phoneNumber) => set({ phoneNumber }),
-  
-  setVerificationCode: (code) => set({ verificationCode: code }),
-  
-  // SMS 인증번호 전송
-  sendVerificationCode: async () => {
+  // 카카오 로그인
+  kakaoLogin: async () => {
     set({ isLoading: true });
     try {
-      const { phoneNumber } = get();
+      // 카카오 SDK 초기화
+      initKakao();
       
-      const response = await fetch('/api/auth/send-code', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phoneNumber }),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'SMS 전송에 실패했습니다.');
-      }
-      
-      // 3분 타이머 시작
-      set({ 
-        isVerificationSent: true, 
-        verificationTimer: 180,
-        isLoading: false 
-      });
-      
-      // 개발 환경에서만 인증번호 콘솔 출력
-      if (data.verificationCode) {
-        console.log('개발용 인증번호:', data.verificationCode);
-      }
-      
-      // 타이머 카운트다운
-      const timer = setInterval(() => {
-        const currentTimer = get().verificationTimer;
-        if (currentTimer <= 1) {
-          clearInterval(timer);
-          set({ verificationTimer: 0, isVerificationSent: false });
-        } else {
-          set({ verificationTimer: currentTimer - 1 });
-        }
-      }, 1000);
-      
-      return { success: true, message: data.message };
-    } catch (error) {
-      console.error('SMS 전송 실패:', error);
-      set({ isLoading: false });
-      return { success: false, error: error.message };
-    }
-  },
-  
-  // 인증번호 확인 및 로그인
-  verifyAndLogin: async () => {
-    set({ isLoading: true });
-    try {
-      const { phoneNumber, verificationCode } = get();
-      
-      const response = await fetch('/api/auth/verify-code', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phoneNumber, verificationCode }),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || '인증에 실패했습니다.');
-      }
+      // 카카오 로그인 실행
+      const result = await performKakaoLogin();
       
       const user = {
-        id: data.user.id,
-        phoneNumber: data.user.phoneNumber,
-        createdAt: data.user.createdAt,
-        lastLoginAt: data.user.lastLoginAt
+        id: result.user.id,
+        name: result.user.nickname, // 카카오 닉네임을 이름으로 사용
+        nickname: result.user.nickname,
+        profileImage: result.user.profileImage,
+        email: result.user.email,
+        provider: 'kakao',
+        accessToken: result.accessToken,
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString()
       };
       
       set({
         isAuthenticated: true,
         user,
-        isLoading: false,
-        phoneNumber: '',
-        verificationCode: '',
-        isVerificationSent: false,
-        verificationTimer: 0
+        isLoading: false
       });
       
       // 로컬 스토리지에 로그인 상태 저장 (24시간 유지)
@@ -110,11 +42,91 @@ export const useAuthStore = create((set, get) => ({
         timestamp: Date.now()
       }));
       
-      return { success: true, message: data.message };
+      return { success: true, message: '카카오 로그인에 성공했습니다.', user };
     } catch (error) {
-      console.error('인증 실패:', error);
+      console.error('카카오 로그인 실패:', error);
       set({ isLoading: false });
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: error.message || '카카오 로그인에 실패했습니다.' 
+      };
+    }
+  },
+  
+  // 카카오 콜백 처리 (인증 코드를 받아 토큰 교환)
+  processKakaoCallback: async (code) => {
+    set({ isLoading: true });
+    try {
+      console.log('카카오 인증 코드로 토큰 교환 시도:', code);
+      
+      // 카카오 토큰 API 호출
+      const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: process.env.NEXT_PUBLIC_KAKAO_JS_KEY,
+          redirect_uri: `${window.location.origin}/login`,
+          code: code,
+        }),
+      });
+      
+      if (!tokenResponse.ok) {
+        throw new Error('토큰 교환에 실패했습니다.');
+      }
+      
+      const tokenData = await tokenResponse.json();
+      console.log('토큰 교환 성공:', tokenData);
+      
+      // 사용자 정보 가져오기
+      const userResponse = await fetch('https://kapi.kakao.com/v2/user/me', {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+        },
+      });
+      
+      if (!userResponse.ok) {
+        throw new Error('사용자 정보 조회에 실패했습니다.');
+      }
+      
+      const userInfo = await userResponse.json();
+      console.log('사용자 정보 조회 성공:', userInfo);
+      
+      const user = {
+        id: userInfo.id,
+        name: userInfo.properties?.nickname || '카카오 사용자', // 카카오 닉네임을 이름으로 사용
+        nickname: userInfo.properties?.nickname || '',
+        profileImage: userInfo.properties?.profile_image || '',
+        email: userInfo.kakao_account?.email || '',
+        provider: 'kakao',
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString()
+      };
+      
+      set({
+        isAuthenticated: true,
+        user,
+        isLoading: false
+      });
+      
+      // 로컬 스토리지에 로그인 상태 저장 (24시간 유지)
+      localStorage.setItem('mealstack_auth', JSON.stringify({
+        user,
+        timestamp: Date.now()
+      }));
+      
+      return { success: true, message: '카카오 로그인에 성공했습니다.', user };
+    } catch (error) {
+      console.error('카카오 콜백 처리 실패:', error);
+      set({ isLoading: false });
+      return { 
+        success: false, 
+        error: error.message || '카카오 로그인 처리에 실패했습니다.' 
+      };
     }
   },
   
@@ -142,24 +154,45 @@ export const useAuthStore = create((set, get) => ({
   },
   
   // 로그아웃
-  logout: () => {
-    set({
-      isAuthenticated: false,
-      user: null,
-      phoneNumber: '',
-      verificationCode: '',
-      isVerificationSent: false,
-      verificationTimer: 0
-    });
-    localStorage.removeItem('mealstack_auth');
+  logout: async () => {
+    try {
+      const { user } = get();
+      
+      // 카카오 로그아웃 (카카오 로그인 사용자인 경우)
+      if (user?.provider === 'kakao') {
+        await kakaoLogout();
+      }
+      
+      set({
+        isAuthenticated: false,
+        user: null,
+        isLoading: false
+      });
+      
+      localStorage.removeItem('mealstack_auth');
+      return { success: true };
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+      // 로그아웃 실패해도 로컬 상태는 초기화
+      set({
+        isAuthenticated: false,
+        user: null,
+        isLoading: false
+      });
+      localStorage.removeItem('mealstack_auth');
+      return { success: false, error: error.message };
+    }
+  },
+  
+  // 카카오 SDK 초기화
+  initializeKakao: () => {
+    if (typeof window !== 'undefined') {
+      initKakao();
+    }
   },
   
   // 리셋 (컴포넌트 언마운트 시 사용)
   reset: () => set({
-    phoneNumber: '',
-    verificationCode: '',
-    isVerificationSent: false,
-    verificationTimer: 0,
     isLoading: false
   })
 }));

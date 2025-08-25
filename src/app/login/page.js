@@ -1,108 +1,79 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
-import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
 import { useAuthStore } from '@/stores/authStore';
 
-// 전화번호 인증 로그인 - 개발자 A 담당
+// 카카오 로그인 - 개발자 A 담당
 export default function LoginPage() {
   const router = useRouter();
   const {
-    phoneNumber,
-    verificationCode,
-    isVerificationSent,
-    verificationTimer,
     isLoading,
     isAuthenticated,
-    setPhoneNumber,
-    setVerificationCode,
-    sendVerificationCode,
-    verifyAndLogin,
+    kakaoLogin,
+    processKakaoCallback,
+    initializeKakao,
     reset
   } = useAuthStore();
   
-  const [errors, setErrors] = useState({});
+  const [error, setError] = useState('');
   
+  // 카카오 콜백 처리
+  const handleKakaoCallback = useCallback(async (code) => {
+    setError('');
+    try {
+      const result = await processKakaoCallback(code);
+      if (result.success) {
+        console.log('카카오 로그인 성공, 홈으로 이동');
+        router.push('/home');
+      } else {
+        setError(result.error);
+        // URL에서 code 파라미터 제거
+        router.replace('/login');
+      }
+    } catch (err) {
+      console.error('카카오 콜백 처리 오류:', err);
+      setError('로그인 처리 중 오류가 발생했습니다.');
+      router.replace('/login');
+    }
+  }, [processKakaoCallback, router]);
+
   useEffect(() => {
     // 이미 로그인된 경우 홈으로 리다이렉트
     if (isAuthenticated) {
       router.replace('/home');
+      return;
+    }
+    
+    // URL에 code 파라미터가 있으면 카카오 콜백 처리 (클라이언트 사이드에서만)
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      if (code) {
+        console.log('카카오 인증 코드 발견:', code);
+        handleKakaoCallback(code);
+      } else {
+        // 카카오 SDK 초기화 (일반 로그인 페이지 접근 시)
+        initializeKakao();
+      }
     }
     
     // 컴포넌트 언마운트 시 상태 리셋
     return () => reset();
-  }, [isAuthenticated, router, reset]);
+  }, [isAuthenticated, router, reset, initializeKakao, handleKakaoCallback]);
   
-  // 전화번호 유효성 검사
-  const validatePhoneNumber = (phone) => {
-    const phoneRegex = /^010-\d{4}-\d{4}$/;
-    return phoneRegex.test(phone);
-  };
-  
-  // 인증번호 유효성 검사
-  const validateVerificationCode = (code) => {
-    return code.length === 6 && /^\d+$/.test(code);
-  };
-  
-  // 전화번호 형식 자동 변환
-  const handlePhoneNumberChange = (e) => {
-    let value = e.target.value.replace(/[^0-9]/g, '');
-    
-    if (value.length <= 11) {
-      if (value.length > 3 && value.length <= 7) {
-        value = value.slice(0, 3) + '-' + value.slice(3);
-      } else if (value.length > 7) {
-        value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7);
-      }
-      setPhoneNumber(value);
-      setErrors({ ...errors, phoneNumber: '' });
-    }
-  };
-  
-  // 인증번호 전송
-  const handleSendCode = async () => {
-    if (!validatePhoneNumber(phoneNumber)) {
-      setErrors({ ...errors, phoneNumber: '올바른 전화번호 형식이 아닙니다 (010-0000-0000)' });
-      return;
-    }
-    
-    const result = await sendVerificationCode();
-    if (!result.success) {
-      setErrors({ ...errors, phoneNumber: result.error });
-    }
-  };
-  
-  // 인증번호 입력
-  const handleVerificationCodeChange = (e) => {
-    const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
-    setVerificationCode(value);
-    setErrors({ ...errors, verificationCode: '' });
-  };
-  
-  // 로그인 처리
-  const handleLogin = async () => {
-    if (!validateVerificationCode(verificationCode)) {
-      setErrors({ ...errors, verificationCode: '6자리 숫자를 입력해주세요' });
-      return;
-    }
-    
-    const result = await verifyAndLogin();
+  // 카카오 로그인 처리
+  const handleKakaoLogin = async () => {
+    setError('');
+    const result = await kakaoLogin();
     if (result.success) {
       router.push('/home');
     } else {
-      setErrors({ ...errors, verificationCode: result.error });
+      setError(result.error);
     }
-  };
-  
-  // 타이머 표시 포맷
-  const formatTimer = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
   return (
@@ -112,98 +83,53 @@ export default function LoginPage() {
       <main className="px-4 py-6">
         <div className="max-w-md mx-auto">
           {/* 안내 메시지 */}
-          <div className="mb-8">
+          <div className="mb-12">
             <h1 className="text-lg font-semibold text-text-white mb-2">
-              안전한 주문을 위해
+              간편하게 로그인하고
               <br />
-              전화번호 인증이 필요해요
+              맛있는 벌크업 도시락을 만나보세요
             </h1>
+            <p className="text-text-gray text-sm mt-4">
+              카카오 로그인으로 빠르고 안전하게 시작하세요
+            </p>
           </div>
           
-          {/* 전화번호 입력 */}
+          {/* 카카오 로그인 버튼 */}
           <div className="mb-6">
-            <Input
-              label="전화번호"
-              type="tel"
-              placeholder="010-1234-5678"
-              value={phoneNumber}
-              onChange={handlePhoneNumberChange}
-              error={errors.phoneNumber}
-              disabled={isVerificationSent}
-            />
+            <Button
+              onClick={handleKakaoLogin}
+              loading={isLoading}
+              disabled={isLoading}
+              className="w-full bg-yellow-400 text-gray-900 font-semibold py-4 rounded-lg hover:bg-yellow-500 disabled:bg-yellow-600"
+            >
+              {isLoading ? '로그인 중...' : '카카오로 시작하기'}
+            </Button>
           </div>
           
-          {/* 인증번호 전송 버튼 */}
-          {!isVerificationSent && (
+          {/* 에러 메시지 */}
+          {error && (
             <div className="mb-6">
-              <Button
-                onClick={handleSendCode}
-                loading={isLoading}
-                disabled={!phoneNumber || isLoading}
-                className="w-full"
-              >
-                인증번호 전송
-              </Button>
+              <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
             </div>
           )}
           
-          {/* 인증번호 입력 (인증번호 전송 후 표시) */}
-          {isVerificationSent && (
-            <>
-              <div className="mb-4">
-                <div className="flex space-x-2">
-                  <div className="flex-1">
-                    <Input
-                      label="인증번호"
-                      type="number"
-                      placeholder="6자리 숫자 입력"
-                      value={verificationCode}
-                      onChange={handleVerificationCodeChange}
-                      error={errors.verificationCode}
-                      maxLength={6}
-                    />
-                  </div>
-                  <div className="w-20 bg-card-gray rounded-lg flex items-end justify-center pb-3">
-                    <span className="text-primary-red font-semibold">
-                      {formatTimer(verificationTimer)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* 재전송 안내 */}
-              <div className="mb-6 text-center">
-                <p className="text-text-gray text-sm mb-2">
-                  인증번호를 받지 못하셨나요?
-                </p>
-                <button
-                  onClick={handleSendCode}
-                  className="text-primary-red text-sm font-semibold hover:underline"
-                  disabled={verificationTimer > 0}
-                >
-                  인증번호 재전송
-                </button>
-              </div>
-              
-              {/* 인증 완료 버튼 */}
-              <div className="mb-6">
-                <Button
-                  onClick={handleLogin}
-                  loading={isLoading}
-                  disabled={!verificationCode || verificationCode.length !== 6 || isLoading}
-                  className="w-full"
-                >
-                  인증 완료
-                </Button>
-              </div>
-            </>
-          )}
+          {/* 카카오 로그인 아이콘 추가 */}
+          <div className="text-center mb-8">
+            <div className="inline-block w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mb-4">
+              <span className="text-2xl">💬</span>
+            </div>
+            <p className="text-text-light-gray text-xs">
+              카카오 계정으로 간편 로그인
+            </p>
+          </div>
           
-          {/* 안내사항 */}
-          <div className="text-text-light-gray text-xs space-y-1">
-            <p>• 인증번호는 SMS로 발송됩니다</p>
-            <p>• 3분 내에 입력해주세요</p>
-            <p>• 최대 5회까지 재전송 가능합니다</p>
+          {/* 서비스 안내 */}
+          <div className="text-text-light-gray text-xs space-y-1 text-center">
+            <p>• 개인정보는 안전하게 보호됩니다</p>
+            <p>• 닉네임과 프로필 이미지만 수집합니다</p>
+            <p>• 언제든지 연결 해제가 가능합니다</p>
           </div>
         </div>
       </main>

@@ -78,8 +78,8 @@ export default function MyPage() {
               <h2 className="text-lg font-bold text-text-white mb-1">
                 {user.name}님
               </h2>
-              <p className="text-text-gray text-sm mb-1">{user.phoneNumber}</p>
-              <p className="text-text-gray text-sm mb-2">{user.email}</p>
+              <p className="text-text-gray text-sm mb-1">카카오 로그인</p>
+              <p className="text-text-gray text-sm mb-2">{user.email || '이메일 미제공'}</p>
               {subscription && subscription.status === 'active' && (
                 <span className="inline-block px-2 py-1 bg-primary-red text-white text-xs rounded">
                   {subscription.plan} 중
