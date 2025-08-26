@@ -230,6 +230,58 @@ export default function HomePage() {
         {/* 구독 섹션 */}
         <section className="mb-8">
           <h2 className="text-lg font-bold text-primary-red mb-4">구독 플랜</h2>
+          
+          {/* 구독 상품 소개 */}
+          <div className="mb-6">
+            <h3 className="text-text-white font-semibold mb-3 text-center">
+              구독하면 이런 도시락을 받을 수 있어요
+            </h3>
+            
+            {/* 구독 상품 갤러리 */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-card-dark-gray rounded-lg p-3">
+                <div className="w-full aspect-square bg-background-dark rounded mb-2 flex items-center justify-center">
+                  <span className="text-xs text-text-gray">닭가슴살 도시락</span>
+                </div>
+                <p className="text-xs text-text-white font-semibold">고단백 닭가슴살 도시락</p>
+                <p className="text-xs text-text-gray">단백질 42g · 580kcal</p>
+              </div>
+              
+              <div className="bg-card-dark-gray rounded-lg p-3">
+                <div className="w-full aspect-square bg-background-dark rounded mb-2 flex items-center justify-center">
+                  <span className="text-xs text-text-gray">소고기 도시락</span>
+                </div>
+                <p className="text-xs text-text-white font-semibold">프리미엄 소고기 도시락</p>
+                <p className="text-xs text-text-gray">단백질 38g · 620kcal</p>
+              </div>
+              
+              <div className="bg-card-dark-gray rounded-lg p-3">
+                <div className="w-full aspect-square bg-background-dark rounded mb-2 flex items-center justify-center">
+                  <span className="text-xs text-text-gray">연어 도시락</span>
+                </div>
+                <p className="text-xs text-text-white font-semibold">오메가3 연어 도시락</p>
+                <p className="text-xs text-text-gray">단백질 35g · 550kcal</p>
+              </div>
+              
+              <div className="bg-card-dark-gray rounded-lg p-3">
+                <div className="w-full aspect-square bg-background-dark rounded mb-2 flex items-center justify-center">
+                  <span className="text-xs text-text-gray">새우 도시락</span>
+                </div>
+                <p className="text-xs text-text-white font-semibold">고단백 새우 도시락</p>
+                <p className="text-xs text-text-gray">단백질 40g · 480kcal</p>
+              </div>
+            </div>
+            
+            <div className="text-center bg-background-dark rounded-lg p-3">
+              <p className="text-sm text-text-white mb-1">
+                <span className="text-primary-red font-bold">매주 다른 메뉴</span>로 구성
+              </p>
+              <p className="text-xs text-text-gray">
+                전문 영양사가 설계한 20가지 이상의 다양한 메뉴를<br />
+                로테이션으로 제공하여 질리지 않게!
+              </p>
+            </div>
+          </div>
 
           <div className="space-y-4">
             {subscriptions.map((sub) => (
