@@ -1,5 +1,72 @@
 import { create } from 'zustand';
 import { initKakao, performKakaoLogin, kakaoLogout } from '@/lib/kakao';
+import { supabase } from '@/lib/supabase';
+
+// Supabase users 테이블에 사용자 정보 저장 또는 업데이트
+const saveUserToDatabase = async (user) => {
+  try {
+    // 카카오 ID로 기존 사용자 찾기
+    const { data: existingUser, error: findError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('kakao_id', user.id)
+      .single();
+
+    if (findError && findError.code !== 'PGRST116') { // PGRST116은 데이터를 찾을 수 없음 에러
+      console.error('기존 사용자 조회 오류:', findError);
+      throw findError;
+    }
+
+    const userData = {
+      kakao_id: user.id,
+      name: user.name,
+      nickname: user.nickname,
+      email: user.email,
+      profile_image: user.profileImage,
+      provider: user.provider,
+      last_login_at: new Date().toISOString()
+    };
+
+    if (existingUser) {
+      // 기존 사용자 정보 업데이트 (마지막 로그인 시간 등)
+      const { data, error } = await supabase
+        .from('users')
+        .update(userData)
+        .eq('id', existingUser.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('사용자 정보 업데이트 오류:', error);
+        throw error;
+      }
+
+      console.log('기존 사용자 정보 업데이트 완료:', data);
+      return data;
+    } else {
+      // 새 사용자 생성
+      userData.created_at = new Date().toISOString();
+      
+      const { data, error } = await supabase
+        .from('users')
+        .insert(userData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('새 사용자 생성 오류:', error);
+        throw error;
+      }
+
+      console.log('새 사용자 생성 완료:', data);
+      return data;
+    }
+  } catch (error) {
+    console.error('사용자 DB 저장 오류:', error);
+    // DB 저장 실패해도 로그인은 계속 진행되도록 null 반환
+    return null;
+  }
+};
 
 // 인증 관련 상태 관리 - 카카오 로그인 방식
 export const useAuthStore = create((set, get) => ({
@@ -30,19 +97,22 @@ export const useAuthStore = create((set, get) => ({
         lastLoginAt: new Date().toISOString()
       };
       
+      // Supabase에 사용자 정보 저장 또는 업데이트
+      const dbUser = await saveUserToDatabase(user);
+      
       set({
         isAuthenticated: true,
-        user,
+        user: { ...user, dbId: dbUser?.id }, // DB ID 추가
         isLoading: false
       });
       
       // 로컬 스토리지에 로그인 상태 저장 (24시간 유지)
       localStorage.setItem('mealstack_auth', JSON.stringify({
-        user,
+        user: { ...user, dbId: dbUser?.id },
         timestamp: Date.now()
       }));
       
-      return { success: true, message: '카카오 로그인에 성공했습니다.', user };
+      return { success: true, message: '카카오 로그인에 성공했습니다.', user: { ...user, dbId: dbUser?.id } };
     } catch (error) {
       console.error('카카오 로그인 실패:', error);
       set({ isLoading: false });
@@ -107,19 +177,22 @@ export const useAuthStore = create((set, get) => ({
         lastLoginAt: new Date().toISOString()
       };
       
+      // Supabase에 사용자 정보 저장 또는 업데이트
+      const dbUser = await saveUserToDatabase(user);
+      
       set({
         isAuthenticated: true,
-        user,
+        user: { ...user, dbId: dbUser?.id }, // DB ID 추가
         isLoading: false
       });
       
       // 로컬 스토리지에 로그인 상태 저장 (24시간 유지)
       localStorage.setItem('mealstack_auth', JSON.stringify({
-        user,
+        user: { ...user, dbId: dbUser?.id },
         timestamp: Date.now()
       }));
       
-      return { success: true, message: '카카오 로그인에 성공했습니다.', user };
+      return { success: true, message: '카카오 로그인에 성공했습니다.', user: { ...user, dbId: dbUser?.id } };
     } catch (error) {
       console.error('카카오 콜백 처리 실패:', error);
       set({ isLoading: false });
