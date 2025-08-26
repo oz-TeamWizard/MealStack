@@ -96,20 +96,38 @@ export const performKakaoLogin = () => {
 
 // 카카오 로그아웃
 export const kakaoLogout = () => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (!window.Kakao?.Auth) {
-      reject(new Error('카카오 SDK가 로드되지 않았습니다.'));
+      console.log('카카오 SDK가 로드되지 않음, 로컬 로그아웃만 실행');
+      resolve();
       return;
     }
 
+    // 카카오 SDK에서 액세스 토큰 상태 확인
+    const accessToken = window.Kakao.Auth.getAccessToken();
+    if (!accessToken) {
+      console.log('카카오 액세스 토큰이 없음, 로컬 로그아웃만 실행');
+      resolve();
+      return;
+    }
+
+    // 카카오 서버에서 로그아웃 시도
     window.Kakao.Auth.logout({
       success: () => {
-        console.log('카카오 로그아웃 성공');
+        console.log('카카오 서버 로그아웃 성공');
+        // 로컬 토큰도 제거
+        window.Kakao.Auth.setAccessToken(null);
         resolve();
       },
       fail: (error) => {
-        console.error('카카오 로그아웃 실패:', error);
-        reject(error);
+        console.warn('카카오 서버 로그아웃 실패, 로컬 토큰 강제 제거:', error);
+        // 서버 로그아웃 실패해도 로컬 토큰은 제거
+        try {
+          window.Kakao.Auth.setAccessToken(null);
+        } catch (tokenError) {
+          console.warn('로컬 토큰 제거 실패:', tokenError);
+        }
+        resolve();
       }
     });
   });

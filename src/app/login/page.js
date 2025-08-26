@@ -20,26 +20,37 @@ export default function LoginPage() {
   } = useAuthStore();
   
   const [error, setError] = useState('');
+  const [isProcessingCallback, setIsProcessingCallback] = useState(false);
   
   // 카카오 콜백 처리
   const handleKakaoCallback = useCallback(async (code) => {
+    if (isProcessingCallback) {
+      console.log('이미 콜백 처리 중, 중복 실행 방지');
+      return;
+    }
+    
+    setIsProcessingCallback(true);
     setError('');
     try {
       const result = await processKakaoCallback(code);
       if (result.success) {
         console.log('카카오 로그인 성공, 홈으로 이동');
-        router.push('/home');
+        // 성공 시 URL 정리 없이 바로 홈으로 이동
+        router.replace('/home');
       } else {
         setError(result.error);
         // URL에서 code 파라미터 제거
-        router.replace('/login');
+        window.history.replaceState({}, '', '/login');
       }
     } catch (err) {
       console.error('카카오 콜백 처리 오류:', err);
       setError('로그인 처리 중 오류가 발생했습니다.');
-      router.replace('/login');
+      // URL에서 code 파라미터 제거
+      window.history.replaceState({}, '', '/login');
+    } finally {
+      setIsProcessingCallback(false);
     }
-  }, [processKakaoCallback, router]);
+  }, [isProcessingCallback, processKakaoCallback, router]);
 
   useEffect(() => {
     // 이미 로그인된 경우 홈으로 리다이렉트
@@ -52,10 +63,10 @@ export default function LoginPage() {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
-      if (code) {
+      if (code && !isProcessingCallback) {
         console.log('카카오 인증 코드 발견:', code);
         handleKakaoCallback(code);
-      } else {
+      } else if (!code) {
         // 카카오 SDK 초기화 (일반 로그인 페이지 접근 시)
         initializeKakao();
       }
@@ -63,7 +74,7 @@ export default function LoginPage() {
     
     // 컴포넌트 언마운트 시 상태 리셋
     return () => reset();
-  }, [isAuthenticated, router, reset, initializeKakao, handleKakaoCallback]);
+  }, [isAuthenticated, router, reset, initializeKakao, handleKakaoCallback, isProcessingCallback]);
   
   // 카카오 로그인 처리
   const handleKakaoLogin = async () => {

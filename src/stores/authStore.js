@@ -18,12 +18,12 @@ const saveUserToDatabase = async (user) => {
     }
 
     const userData = {
-      kakao_id: user.id,
+      kakao_id: user.id.toString(), // 문자열로 변환
       name: user.name,
       nickname: user.nickname,
       email: user.email,
-      profile_image: user.profileImage,
-      provider: user.provider,
+      profile_image_url: user.profileImage, // 컬럼명 수정
+      login_type: 'kakao', // provider 대신 login_type 사용
       last_login_at: new Date().toISOString()
     };
 
@@ -44,9 +44,7 @@ const saveUserToDatabase = async (user) => {
       console.log('기존 사용자 정보 업데이트 완료:', data);
       return data;
     } else {
-      // 새 사용자 생성
-      userData.created_at = new Date().toISOString();
-      
+      // 새 사용자 생성 - created_at은 기본값으로 자동 설정됨
       const { data, error } = await supabase
         .from('users')
         .insert(userData)
@@ -74,6 +72,7 @@ export const useAuthStore = create((set, get) => ({
   isAuthenticated: false,
   user: null,
   isLoading: false,
+  usedAuthCodes: new Set(), // 사용된 인증코드 추적
   
   // 카카오 로그인
   kakaoLogin: async () => {
@@ -125,26 +124,50 @@ export const useAuthStore = create((set, get) => ({
   
   // 카카오 콜백 처리 (인증 코드를 받아 토큰 교환)
   processKakaoCallback: async (code) => {
-    set({ isLoading: true });
+    const { usedAuthCodes } = get();
+    
+    // 이미 사용된 코드인지 확인
+    if (usedAuthCodes.has(code)) {
+      console.log('이미 사용된 인증 코드:', code);
+      return { 
+        success: false, 
+        error: '이미 처리된 인증 코드입니다.' 
+      };
+    }
+    
+    // 사용된 코드로 표시
+    set({ 
+      isLoading: true,
+      usedAuthCodes: new Set([...usedAuthCodes, code])
+    });
+    
     try {
       console.log('카카오 인증 코드로 토큰 교환 시도:', code);
       
       // 카카오 토큰 API 호출
+      const tokenParams = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: process.env.NEXT_PUBLIC_KAKAO_JS_KEY,
+        redirect_uri: `${window.location.origin}/login`,
+        code: code,
+      });
+
       const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          client_id: process.env.NEXT_PUBLIC_KAKAO_JS_KEY,
-          redirect_uri: `${window.location.origin}/login`,
-          code: code,
-        }),
+        body: tokenParams,
       });
       
       if (!tokenResponse.ok) {
-        throw new Error('토큰 교환에 실패했습니다.');
+        const errorText = await tokenResponse.text();
+        console.error('카카오 토큰 교환 실패 상세:', {
+          status: tokenResponse.status,
+          statusText: tokenResponse.statusText,
+          error: errorText
+        });
+        throw new Error(`토큰 교환에 실패했습니다. (${tokenResponse.status})`);
       }
       
       const tokenData = await tokenResponse.json();
@@ -228,33 +251,32 @@ export const useAuthStore = create((set, get) => ({
   
   // 로그아웃
   logout: async () => {
+    console.log('로그아웃 시작');
+    const { user } = get();
+    
     try {
-      const { user } = get();
-      
       // 카카오 로그아웃 (카카오 로그인 사용자인 경우)
-      if (user?.provider === 'kakao') {
+      if (user?.login_type === 'kakao' || user?.provider === 'kakao') {
+        console.log('카카오 로그아웃 시도');
         await kakaoLogout();
+        console.log('카카오 로그아웃 완료');
       }
-      
-      set({
-        isAuthenticated: false,
-        user: null,
-        isLoading: false
-      });
-      
-      localStorage.removeItem('mealstack_auth');
-      return { success: true };
     } catch (error) {
-      console.error('로그아웃 실패:', error);
-      // 로그아웃 실패해도 로컬 상태는 초기화
-      set({
-        isAuthenticated: false,
-        user: null,
-        isLoading: false
-      });
-      localStorage.removeItem('mealstack_auth');
-      return { success: false, error: error.message };
+      console.warn('카카오 서버 로그아웃 실패, 로컬 로그아웃 계속 진행:', error);
     }
+    
+    // 로컬 상태 초기화 (카카오 로그아웃 성공/실패 관계없이 실행)
+    console.log('로컬 인증 상태 초기화');
+    set({
+      isAuthenticated: false,
+      user: null,
+      isLoading: false,
+      usedAuthCodes: new Set() // 사용된 코드도 초기화
+    });
+    
+    localStorage.removeItem('mealstack_auth');
+    console.log('로그아웃 완료');
+    return { success: true };
   },
   
   // 카카오 SDK 초기화
