@@ -45,15 +45,9 @@ export default function Header({ title, showBack = false, showMenu = true }) {
             )}
           </div>
         ) : (
-          <div className="flex items-center space-x-2 text-text-gray text-sm">
-            <Link href="/register" className="hover:text-text-white">
-              회원가입
-            </Link>
-            <span>|</span>
-            <Link href="/login" className="hover:text-text-white">
-              로그인
-            </Link>
-          </div>
+          <Link href="/login" className="text-text-gray text-sm hover:text-text-white">
+            로그인
+          </Link>
         )}
       </div>
     </header>

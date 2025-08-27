@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
+import Footer from "@/components/layout/Footer";
 import Card from "@/components/common/Card";
-import Button from "@/components/common/Button";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/userStore";
 
@@ -13,6 +13,7 @@ import { useUserStore } from "@/stores/userStore";
 export default function HomePage() {
   const { isAuthenticated, checkAutoLogin } = useAuthStore();
   const { loadMockData } = useUserStore();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     checkAutoLogin();
@@ -20,6 +21,48 @@ export default function HomePage() {
       loadMockData();
     }
   }, [checkAutoLogin, isAuthenticated, loadMockData]);
+
+  // 도시락 플랜 소개 이미지 데이터
+  const planImages = [
+    {
+      id: 1,
+      title: "고단백 벌크업 도시락",
+      subtitle: "단백질 40g, 650kcal",
+      description: "운동 효과를 극대화하는 완벽한 영양 구성",
+      image: "/images/plan-1.jpg",
+      bgColor: "from-gray-800 to-gray-900"
+    },
+    {
+      id: 2,
+      title: "전문 영양사가 설계한",
+      subtitle: "맞춤형 식단 관리",
+      description: "개인별 목표에 맞는 최적화된 메뉴",
+      image: "/images/plan-2.jpg",
+      bgColor: "from-gray-700 to-gray-900"
+    },
+    {
+      id: 3,
+      title: "신선한 재료, 매일 배송",
+      subtitle: "새벽 배송 시스템",
+      description: "운동 후 바로 섭취하는 신선한 도시락",
+      image: "/images/plan-3.jpg",
+      bgColor: "from-gray-900 to-black"
+    }
+  ];
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % planImages.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + planImages.length) % planImages.length);
+  };
+
+  // 자동 슬라이드
+  useEffect(() => {
+    const interval = setInterval(nextSlide, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Mock 상품 데이터
   const products = [
@@ -72,20 +115,73 @@ export default function HomePage() {
     <div className="min-h-screen bg-background-black pb-20">
       <Header />
 
-      <main className="px-4 py-6">
-        {/* 히어로 섹션 */}
-        <section className="mb-8">
-          <h1 className="text-xl font-bold text-text-white mb-4">
-            벌크업 도시락, 이제 간편하게
-            <br />
-            정기 구독으로 받아보세요
-          </h1>
+      <main className="py-6">
+        {/* 도시락 플랜 소개 이미지 캐러셀 */}
+        <section className="mb-8 -mx-0">
+          <div className="relative w-full h-80 overflow-hidden">
+            <div 
+              className="flex transition-transform duration-500 ease-in-out h-full"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {planImages.map((plan, index) => (
+                <div
+                  key={plan.id}
+                  className={`w-full h-full flex-shrink-0 relative bg-gradient-to-br ${plan.bgColor}`}
+                >
+                  {/* 배경 이미지 영역 (실제 이미지가 있을 때 사용) */}
+                  <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+                  
+                  {/* 콘텐츠 */}
+                  <div className="relative z-10 h-full flex flex-col justify-center px-6 text-white">
+                    <h2 className="text-2xl font-bold mb-2">{plan.title}</h2>
+                    <p className="text-lg mb-3 text-gray-300">{plan.subtitle}</p>
+                    <p className="text-sm opacity-90">{plan.description}</p>
+                  </div>
 
-          {/* 히어로 이미지 */}
-          <div className="w-full h-45 bg-card-dark-gray rounded-lg mb-4 flex items-center justify-center">
-            <span className="text-text-gray">도시락 이미지</span>
+                  {/* 가상 이미지 표시 영역 */}
+                  <div className="absolute bottom-4 right-6 w-20 h-20 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                    <span className="text-xs text-white">이미지</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 이전/다음 버튼 */}
+            <button
+              onClick={prevSlide}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black bg-opacity-30 rounded-full flex items-center justify-center text-white hover:bg-opacity-50 transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              onClick={nextSlide}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black bg-opacity-30 rounded-full flex items-center justify-center text-white hover:bg-opacity-50 transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* 인디케이터 */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+              {planImages.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-3 h-3 rounded-full transition-all ${
+                    currentSlide === index 
+                      ? 'bg-white' 
+                      : 'bg-white bg-opacity-50'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </section>
+
+        <div className="px-4">
 
         {/* 상품 섹션 */}
         <section className="mb-8">
@@ -134,6 +230,58 @@ export default function HomePage() {
         {/* 구독 섹션 */}
         <section className="mb-8">
           <h2 className="text-lg font-bold text-primary-red mb-4">구독 플랜</h2>
+          
+          {/* 구독 상품 소개 */}
+          <div className="mb-6">
+            <h3 className="text-text-white font-semibold mb-3 text-center">
+              구독하면 이런 도시락을 받을 수 있어요
+            </h3>
+            
+            {/* 구독 상품 갤러리 */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-card-dark-gray rounded-lg p-3">
+                <div className="w-full aspect-square bg-background-dark rounded mb-2 flex items-center justify-center">
+                  <span className="text-xs text-text-gray">닭가슴살 도시락</span>
+                </div>
+                <p className="text-xs text-text-white font-semibold">고단백 닭가슴살 도시락</p>
+                <p className="text-xs text-text-gray">단백질 42g · 580kcal</p>
+              </div>
+              
+              <div className="bg-card-dark-gray rounded-lg p-3">
+                <div className="w-full aspect-square bg-background-dark rounded mb-2 flex items-center justify-center">
+                  <span className="text-xs text-text-gray">소고기 도시락</span>
+                </div>
+                <p className="text-xs text-text-white font-semibold">프리미엄 소고기 도시락</p>
+                <p className="text-xs text-text-gray">단백질 38g · 620kcal</p>
+              </div>
+              
+              <div className="bg-card-dark-gray rounded-lg p-3">
+                <div className="w-full aspect-square bg-background-dark rounded mb-2 flex items-center justify-center">
+                  <span className="text-xs text-text-gray">연어 도시락</span>
+                </div>
+                <p className="text-xs text-text-white font-semibold">오메가3 연어 도시락</p>
+                <p className="text-xs text-text-gray">단백질 35g · 550kcal</p>
+              </div>
+              
+              <div className="bg-card-dark-gray rounded-lg p-3">
+                <div className="w-full aspect-square bg-background-dark rounded mb-2 flex items-center justify-center">
+                  <span className="text-xs text-text-gray">새우 도시락</span>
+                </div>
+                <p className="text-xs text-text-white font-semibold">고단백 새우 도시락</p>
+                <p className="text-xs text-text-gray">단백질 40g · 480kcal</p>
+              </div>
+            </div>
+            
+            <div className="text-center bg-background-dark rounded-lg p-3">
+              <p className="text-sm text-text-white mb-1">
+                <span className="text-primary-red font-bold">매주 다른 메뉴</span>로 구성
+              </p>
+              <p className="text-xs text-text-gray">
+                전문 영양사가 설계한 20가지 이상의 다양한 메뉴를<br />
+                로테이션으로 제공하여 질리지 않게!
+              </p>
+            </div>
+          </div>
 
           <div className="space-y-4">
             {subscriptions.map((sub) => (
@@ -169,25 +317,11 @@ export default function HomePage() {
             ))}
           </div>
         </section>
-
-        {/* 사전예약 섹션 (비로그인 사용자) */}
-        {!isAuthenticated && (
-          <section className="mb-8">
-            <Card variant="dark" className="text-center">
-              <h3 className="font-bold text-text-white mb-2">
-                🎉 사전예약 진행중!
-              </h3>
-              <p className="text-sm text-text-gray mb-4">
-                출시 알림을 받아보시고 특별 혜택을 누려보세요
-              </p>
-              <Link href="/login">
-                <Button className="w-full">사전예약 신청하기</Button>
-              </Link>
-            </Card>
-          </section>
-        )}
+        
+        </div>
       </main>
 
+      <Footer />
       <BottomNav />
     </div>
   );
