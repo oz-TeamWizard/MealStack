@@ -1,7 +1,7 @@
 // src/app/checkout/page.js
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loadPaymentWidget } from "@tosspayments/payment-widget-sdk";
 
@@ -46,7 +46,11 @@ const scrollToWidget = () =>
     ?.scrollIntoView({ behavior: "smooth", block: "center" });
 
 export default function CheckoutPage() {
-  return <CheckoutContent />;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background-black flex items-center justify-center text-white">로딩 중...</div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
 }
 
 function CheckoutContent() {

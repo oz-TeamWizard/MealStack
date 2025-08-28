@@ -1,7 +1,8 @@
 "use client";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function FailPage() {
+function FailContent() {
   const params = useSearchParams();
   return (
     <div className="p-6 text-text-white">
@@ -10,5 +11,13 @@ export default function FailPage() {
         사유: {params.get("message") || "사용자 취소 또는 오류"}
       </p>
     </div>
+  );
+}
+
+export default function FailPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-text-white">로딩 중...</div>}>
+      <FailContent />
+    </Suspense>
   );
 }
