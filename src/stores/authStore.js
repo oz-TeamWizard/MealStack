@@ -13,8 +13,17 @@ const saveUserToDatabase = async (user) => {
       .single();
 
     if (findError && findError.code !== 'PGRST116') { // PGRST116은 데이터를 찾을 수 없음 에러
-      console.error('기존 사용자 조회 오류:', findError);
-      throw findError;
+      console.error('기존 사용자 조회 오류:', {
+        error: findError,
+        code: findError?.code,
+        message: findError?.message,
+        details: findError?.details,
+        hint: findError?.hint,
+        user_id: user.id
+      });
+      // 데이터베이스 오류가 있어도 로그인 진행 (임시)
+      console.warn('데이터베이스 오류로 인해 사용자 정보 저장을 건너뜁니다.');
+      return null;
     }
 
     const userData = {
@@ -202,8 +211,13 @@ export const useAuthStore = create((set, get) => ({
         lastLoginAt: new Date().toISOString()
       };
       
-      // Supabase에 사용자 정보 저장 또는 업데이트
-      const dbUser = await saveUserToDatabase(user);
+      // Supabase에 사용자 정보 저장 또는 업데이트 (임시로 비활성화)
+      let dbUser = null;
+      try {
+        dbUser = await saveUserToDatabase(user);
+      } catch (error) {
+        console.warn('데이터베이스 저장 실패, 로그인은 계속 진행:', error);
+      }
       
       set({
         isAuthenticated: true,
@@ -289,11 +303,33 @@ export const useAuthStore = create((set, get) => ({
     return { success: true };
   },
   
-  // 카카오 SDK 초기화
-  initializeKakao: () => {
-    if (typeof window !== 'undefined') {
-      initKakao();
+  // 카카오 SDK 초기화 (SDK 로드 대기 포함)
+  initializeKakao: async () => {
+    if (typeof window === 'undefined') {
+      console.log('서버 사이드에서는 카카오 SDK를 초기화할 수 없습니다.');
+      return false;
     }
+
+    // 카카오 SDK 로드 대기 (최대 10초)
+    let attempts = 0;
+    const maxAttempts = 50; // 200ms * 50 = 10초
+    
+    while (!window.Kakao && attempts < maxAttempts) {
+      console.log(`카카오 SDK 로드 대기 중... (${attempts + 1}/${maxAttempts})`);
+      await new Promise(resolve => setTimeout(resolve, 200));
+      attempts++;
+    }
+
+    if (!window.Kakao) {
+      console.error('카카오 SDK 로드 실패: 타임아웃');
+      return false;
+    }
+
+    const result = initKakao();
+    if (!result) {
+      console.error('카카오 SDK 초기화 실패');
+    }
+    return result;
   },
   
   // 리셋 (컴포넌트 언마운트 시 사용)

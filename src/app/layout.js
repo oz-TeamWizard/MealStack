@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import Script from "next/script";
+import KakaoSDKProvider from "@/components/KakaoSDKProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -25,8 +26,9 @@ export default function RootLayout({ children }) {
           src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
           integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4"
           crossOrigin="anonymous"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
+        <KakaoSDKProvider />
         <div className="min-h-screen max-w-md mx-auto">{children}</div>
       </body>
     </html>
