@@ -106,10 +106,12 @@ export const useAuthStore = create((set, get) => ({
       });
       
       // 로컬 스토리지에 로그인 상태 저장 (24시간 유지)
-      localStorage.setItem('mealstack_auth', JSON.stringify({
-        user: { ...user, dbId: dbUser?.id },
-        timestamp: Date.now()
-      }));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('mealstack_auth', JSON.stringify({
+          user: { ...user, dbId: dbUser?.id },
+          timestamp: Date.now()
+        }));
+      }
       
       return { success: true, message: '카카오 로그인에 성공했습니다.', user: { ...user, dbId: dbUser?.id } };
     } catch (error) {
@@ -210,10 +212,12 @@ export const useAuthStore = create((set, get) => ({
       });
       
       // 로컬 스토리지에 로그인 상태 저장 (24시간 유지)
-      localStorage.setItem('mealstack_auth', JSON.stringify({
-        user: { ...user, dbId: dbUser?.id },
-        timestamp: Date.now()
-      }));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('mealstack_auth', JSON.stringify({
+          user: { ...user, dbId: dbUser?.id },
+          timestamp: Date.now()
+        }));
+      }
       
       return { success: true, message: '카카오 로그인에 성공했습니다.', user: { ...user, dbId: dbUser?.id } };
     } catch (error) {
@@ -228,6 +232,8 @@ export const useAuthStore = create((set, get) => ({
   
   // 자동 로그인 체크
   checkAutoLogin: () => {
+    if (typeof window === 'undefined') return false;
+    
     try {
       const stored = localStorage.getItem('mealstack_auth');
       if (stored) {
@@ -244,7 +250,9 @@ export const useAuthStore = create((set, get) => ({
       }
     } catch (error) {
       console.error('자동 로그인 체크 실패:', error);
-      localStorage.removeItem('mealstack_auth');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('mealstack_auth');
+      }
     }
     return false;
   },
@@ -274,7 +282,9 @@ export const useAuthStore = create((set, get) => ({
       usedAuthCodes: new Set() // 사용된 코드도 초기화
     });
     
-    localStorage.removeItem('mealstack_auth');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('mealstack_auth');
+    }
     console.log('로그아웃 완료');
     return { success: true };
   },

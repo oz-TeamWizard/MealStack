@@ -17,9 +17,9 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: `
               default-src 'self';
-              script-src 'self' 'unsafe-eval' 'unsafe-inline' *.tosspayments.com *.toss.im;
-              connect-src 'self' *.tosspayments.com *.toss.im;
-              frame-src 'self' *.tosspayments.com *.toss.im;
+              script-src 'self' 'unsafe-eval' 'unsafe-inline' *.tosspayments.com *.toss.im *.kakao.com *.daumcdn.net;
+              connect-src 'self' *.tosspayments.com *.toss.im *.kakao.com;
+              frame-src 'self' *.tosspayments.com *.toss.im *.kakao.com;
               style-src 'self' 'unsafe-inline';
             `.replace(/\s{2,}/g, ' ').trim()
           }
