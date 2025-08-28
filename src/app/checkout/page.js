@@ -159,10 +159,8 @@ function CheckoutContent() {
           return;
         }
 
-        const ck = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
-        const clientKey = isV2Key(ck)
-          ? ck
-          : "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+        // 강제로 테스트 키 사용하여 확인
+        const clientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
 
         const variantDark = process.env.NEXT_PUBLIC_TOSS_VARIANT_KEY_DARK || "";
         const variantLight =
@@ -172,6 +170,13 @@ function CheckoutContent() {
         const chosenVariant = prefersDark ? variantDark : variantLight;
         const chosenTheme = makeTheme(prefersDark ? "dark" : "light");
 
+        console.log("Loading payment widget with:", {
+          clientKey,
+          customerKey,
+          variantKey: chosenVariant,
+          theme: chosenTheme
+        });
+        
         const widget = await loadPaymentWidget(clientKey, customerKey, {
           ui: chosenVariant
             ? { variantKey: chosenVariant }

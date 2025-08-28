@@ -8,6 +8,25 @@ const nextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: `
+              default-src 'self';
+              script-src 'self' 'unsafe-eval' 'unsafe-inline' *.tosspayments.com *.toss.im;
+              connect-src 'self' *.tosspayments.com *.toss.im;
+              frame-src 'self' *.tosspayments.com *.toss.im;
+              style-src 'self' 'unsafe-inline';
+            `.replace(/\s{2,}/g, ' ').trim()
+          }
+        ]
+      }
+    ]
+  }
 };
 
 module.exports = nextConfig;
