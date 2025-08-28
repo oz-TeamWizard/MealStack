@@ -102,3 +102,48 @@ body {
     opacity: 1;
   }
 }
+
+/* === Toss 결제 페이지 테마 변수 === */
+:root{
+  /* Primary */
+  --primary-red: #dc2626;
+  --primary-red-hover: #b91c1c;
+
+  /* Background */
+  --background-black: #111111;
+  --background-dark:  #1a1a1a;
+
+  /* Text */
+  --text-white:       #ffffff;
+  --text-gray:        #cccccc;
+  --text-light-gray:  #999999;
+}
+
+
+
+@layer utilities {
+  .bg-background-black { background-color: var(--background-black); }
+  .bg-background-dark  { background-color: var(--background-dark); }
+  .bg-primary-red      { background-color: var(--primary-red); }
+  .hover\:bg-primary-red-hover:hover { background-color: var(--primary-red-hover); }
+
+  .text-text-white      { color: var(--text-white); }
+  .text-text-gray       { color: var(--text-gray); }
+  .text-text-light-gray { color: var(--text-light-gray); }
+  .text-primary-red     { color: var(--primary-red); }
+
+  .border-primary-red   { border-color: var(--primary-red); }
+
+  .card {
+    background-color: var(--background-dark);
+    border: 1px solid var(--primary-red);
+    border-radius: 16px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.35);
+  }
+}
+
+/* Toss 오버레이 스케일 */
+.toss-scale-fit iframe[src*="pay.tosspayments.com"]{
+  transform: scale(var(--toss-scale,1));
+  transform-origin: top center;
+}
