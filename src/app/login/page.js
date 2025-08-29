@@ -114,7 +114,8 @@ export default function LoginPage() {
               onClick={handleKakaoLogin}
               loading={isLoading}
               disabled={isLoading}
-              className="w-full bg-[#FEE500] text-[#000000] font-semibold py-4 rounded-lg hover:bg-[#FCDD00] disabled:bg-[#F5D400]"
+              variant=""
+              className="w-full bg-[#FEE500] text-[#000000] font-semibold py-4 rounded-lg hover:bg-[#FEE500] disabled:bg-[#FEE500] transition-colors"
             >
               {isLoading ? '로그인 중...' : '카카오로 시작하기'}
             </Button>

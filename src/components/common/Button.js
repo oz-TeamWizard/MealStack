@@ -27,7 +27,7 @@ export default function Button({
   
   const buttonClasses = `
     ${baseStyles}
-    ${variants[variant]}
+    ${variants[variant] || ''}
     ${sizes[size]}
     ${disabled || loading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
     ${className}
