@@ -1,9 +1,28 @@
 // 카카오 SDK 초기화 및 유틸리티 함수
 export const initKakao = () => {
-  if (typeof window !== 'undefined' && window.Kakao && !window.Kakao.isInitialized()) {
-    window.Kakao.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
-    console.log('Kakao SDK initialized:', window.Kakao.isInitialized());
+  if (typeof window === 'undefined') {
+    console.log('서버 사이드에서는 카카오 SDK를 초기화할 수 없습니다.');
+    return false;
   }
+
+  if (!window.Kakao) {
+    console.error('카카오 SDK가 로드되지 않았습니다. Script 태그를 확인해주세요.');
+    return false;
+  }
+
+  if (!window.Kakao.isInitialized()) {
+    try {
+      window.Kakao.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
+      console.log('Kakao SDK initialized:', window.Kakao.isInitialized());
+      return true;
+    } catch (error) {
+      console.error('카카오 SDK 초기화 실패:', error);
+      return false;
+    }
+  }
+
+  console.log('카카오 SDK는 이미 초기화되었습니다.');
+  return true;
 };
 
 // 카카오 로그인

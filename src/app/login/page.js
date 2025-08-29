@@ -68,7 +68,10 @@ export default function LoginPage() {
         handleKakaoCallback(code);
       } else if (!code) {
         // 카카오 SDK 초기화 (일반 로그인 페이지 접근 시)
-        initializeKakao();
+        initializeKakao().catch(error => {
+          console.error('카카오 SDK 초기화 오류:', error);
+          setError('카카오 SDK 로드에 실패했습니다. 페이지를 새로고침해주세요.');
+        });
       }
     }
     
@@ -111,7 +114,8 @@ export default function LoginPage() {
               onClick={handleKakaoLogin}
               loading={isLoading}
               disabled={isLoading}
-              className="w-full bg-yellow-400 text-gray-900 font-semibold py-4 rounded-lg hover:bg-yellow-500 disabled:bg-yellow-600"
+              variant=""
+              className="w-full bg-[#FEE500] text-[#000000] font-semibold py-4 rounded-lg hover:bg-[#FEE500] disabled:bg-[#FEE500] transition-colors"
             >
               {isLoading ? '로그인 중...' : '카카오로 시작하기'}
             </Button>
@@ -128,7 +132,7 @@ export default function LoginPage() {
           
           {/* 카카오 로그인 아이콘 추가 */}
           <div className="text-center mb-8">
-            <div className="inline-block w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mb-4">
+            <div className="inline-block w-16 h-16 bg-[#FEE500] rounded-full flex items-center justify-center mb-4">
               <span className="text-2xl">💬</span>
             </div>
             <p className="text-text-light-gray text-xs">
