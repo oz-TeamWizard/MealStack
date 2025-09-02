@@ -73,6 +73,92 @@ export const useUserStore = create((set, get) => ({
       });
     }
   },
+
+  // 구독 플랜 변경
+  changeSubscriptionPlan: (newPlan, applyImmediately = false) => {
+    const subscription = get().subscription;
+    if (subscription) {
+      const updateData = {
+        ...subscription,
+        planId: newPlan.id,
+        plan: newPlan.name,
+        price: newPlan.price,
+        planChangeRequestedAt: new Date().toISOString(),
+        planChangeApplyImmediately: applyImmediately
+      };
+      
+      if (applyImmediately) {
+        updateData.nextPaymentDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 1주 후
+      }
+      
+      set({ subscription: updateData });
+    }
+  },
+
+  // 구독 일시정지 (기간 설정)
+  pauseSubscriptionWithPeriod: (weeks = 1) => {
+    const subscription = get().subscription;
+    if (subscription) {
+      const resumeDate = new Date();
+      resumeDate.setDate(resumeDate.getDate() + (weeks * 7));
+      
+      set({ 
+        subscription: { 
+          ...subscription, 
+          status: 'paused',
+          pausedAt: new Date().toISOString(),
+          autoResumeDate: resumeDate.toISOString().split('T')[0],
+          pauseDuration: weeks
+        } 
+      });
+    }
+  },
+
+  // 특정 주 배송 건너뛰기
+  skipWeeklyDelivery: (skipDate) => {
+    const subscription = get().subscription;
+    if (subscription) {
+      const skippedWeeks = subscription.skippedWeeks || [];
+      set({ 
+        subscription: { 
+          ...subscription, 
+          skippedWeeks: [...skippedWeeks, skipDate]
+        } 
+      });
+    }
+  },
+
+  // 배송 일정 설정
+  updateDeliverySchedule: (schedule) => {
+    const subscription = get().subscription;
+    if (subscription) {
+      set({ 
+        subscription: { 
+          ...subscription, 
+          deliveryDay: schedule.day, // 0: 일요일, 1: 월요일, ...
+          deliveryTime: schedule.time, // 'morning' | 'afternoon'
+          deliveryAddress: schedule.address
+        } 
+      });
+    }
+  },
+
+  // 메뉴 선호도 설정
+  updateMenuPreferences: (preferences) => {
+    const subscription = get().subscription;
+    if (subscription) {
+      set({ 
+        subscription: { 
+          ...subscription, 
+          menuPreferences: {
+            allergies: preferences.allergies || [],
+            dislikes: preferences.dislikes || [],
+            preferences: preferences.preferences || []
+          }
+        } 
+      });
+    }
+  },
   
   // 배송지 추가
   addAddress: (address) => {
@@ -162,12 +248,23 @@ export const useUserStore = create((set, get) => ({
     // Mock 구독 정보
     const mockSubscription = {
       id: 1,
-      type: 'weekly',
+      planId: 'weekly',
       plan: '주간 구독',
       price: 65000,
-      nextPaymentDate: '2024.08.18',
+      nextPaymentDate: '2024-08-18',
+      nextDeliveryDate: '2024-08-15',
       status: 'active',
-      startedAt: '2024.08.01'
+      startedAt: '2024-08-01',
+      deliveryDay: 4, // 목요일
+      deliveryTime: 'morning',
+      totalPaid: 260000, // 4주간 결제 금액
+      deliveryCount: 16,
+      menuPreferences: {
+        allergies: [],
+        dislikes: ['매운맛'],
+        preferences: ['단백질 위주', '저탄수화물']
+      },
+      skippedWeeks: []
     };
     
     // Mock 배송지
